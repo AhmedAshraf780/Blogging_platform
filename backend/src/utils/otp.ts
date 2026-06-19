@@ -9,7 +9,7 @@ export const generateOTP = () => {
 export const sendOTPEmail = async (recipientEmail: string, otp: string): Promise<boolean> => {
   try {
     const emailResp = await resend.emails.send({
-      from: config.mail_user,
+      from: "Blogger<onboarding@resend.dev>",
       to: recipientEmail,
       subject: "Your OTP Code for Verification",
       html: `
@@ -23,7 +23,7 @@ export const sendOTPEmail = async (recipientEmail: string, otp: string): Promise
     });
     console.log(emailResp.data)
     if (emailResp.error) {
-      console.log("Failed to send otp ", emailResp.error)
+      console.log("Failed to send otp ", emailResp.error?.message)
       return false
     }
     return true;
