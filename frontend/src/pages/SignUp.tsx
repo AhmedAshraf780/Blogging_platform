@@ -12,9 +12,9 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const data = await userService.signup(name, email, password)
-    if (data.session_id) {
-      toast.success(' Check your email for the OTP.')
-      navigate('/validate-otp', { state: { session_id: data.session_id, email } })
+    if (data.ok) {
+      toast.success(data.message || 'Sign up successful')
+      navigate('/signin', { state: { session_id: data.session_id, email } })
     } else {
       toast.error(data.message || 'Sign up failed')
     }

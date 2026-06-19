@@ -14,7 +14,7 @@ import EditBlog from './pages/EditBlog'
 import './App.css'
 
 function App() {
-  const [auth, setAuth] = useState<{ ok: boolean; user?: { _id?: string }; _id?: string } | null>(null)
+  const [auth, setAuth] = useState<{ ok: boolean; user?: { id?: number }; id?: number } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -25,7 +25,7 @@ function App() {
   }, [])
 
   const isAuthenticated = auth?.ok ?? false
-  const userId = (auth?.user?._id || auth?._id) ?? null
+  const userId = (auth?.user?.id || auth?.id) ?? null
 
   return (
     <>
@@ -61,7 +61,7 @@ function App() {
         </div>
       ) : (
         <Routes>
-          <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Home isAuthenticated={isAuthenticated} userId={userId} /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Home isAuthenticated={isAuthenticated} userId={String(userId)} /></ProtectedRoute>} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/validate-otp" element={<ValidateOtp />} />

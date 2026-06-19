@@ -63,23 +63,30 @@ export async function register(req: Request, res: Response) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // generate otp
-    const otp = generateOTP();
-    const ok = await sendOTPEmail(email, otp);
-    if (!ok) {
-      return res.status(500).json({ message: "Couldn't send otp to the email" })
+    // bcrypt password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await insertUser({ name, email, password: hashedPassword });
+    if (!user) {
+      return res.status(500).json({ message: "Server Error" });
     }
 
-    // create a redis session
-    const sessionData = {
-      name,
-      email,
-      password,
-      otp
-    }
-    const session_id = uuidv4();
-    await redis.set(session_id, JSON.stringify(sessionData));
-    return res.status(201).json({ message: "Otp sent successfully", session_id });
+    // // generate otp
+    // const otp = generateOTP();
+    // const ok = await sendOTPEmail(email, otp);
+    // if (!ok) {
+    //   return res.status(500).json({ message: "Couldn't send otp to the email" })
+    // }
+
+    // // create a redis session
+    // const sessionData = {
+    //   name,
+    //   email,
+    //   password,
+    //   otp
+    // }
+    // const session_id = uuidv4();
+    // await redis.set(session_id, JSON.stringify(sessionData));
+    return res.status(201).json({ message: "User created Successfully" });
   } catch (err) {
     return res.status(500).json({ message: "Server Error" });
   }
