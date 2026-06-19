@@ -55,34 +55,34 @@ responses:
     description: Server error
 */
 export async function register(req: Request, res: Response) {
-    const { name, email, password } = req.body;
-    try {
-        // validation of input
-        const existingUser = await getUserByEmail(email);
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        // generate otp
-        const otp = generateOTP();
-        const ok = await sendOTPEmail(email, otp);
-        if (!ok) {
-            return res.status(500).json({ message: "Couldn't send otp to the email" })
-        }
-
-        // create a redis session
-        const sessionData = {
-            name,
-            email,
-            password,
-            otp
-        }
-        const session_id = uuidv4();
-        await redis.set(session_id, JSON.stringify(sessionData));
-        return res.status(201).json({ message: "Otp sent successfully", session_id });
-    } catch (err) {
-        return res.status(500).json({ message: "Server Error" });
+  const { name, email, password } = req.body;
+  try {
+    // validation of input
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
     }
+
+    // generate otp
+    const otp = generateOTP();
+    const ok = await sendOTPEmail(email, otp);
+    if (!ok) {
+      return res.status(500).json({ message: "Couldn't send otp to the email" })
+    }
+
+    // create a redis session
+    const sessionData = {
+      name,
+      email,
+      password,
+      otp
+    }
+    const session_id = uuidv4();
+    await redis.set(session_id, JSON.stringify(sessionData));
+    return res.status(201).json({ message: "Otp sent successfully", session_id });
+  } catch (err) {
+    return res.status(500).json({ message: "Server Error" });
+  }
 }
 /**
 @swagger
@@ -122,27 +122,27 @@ responses:
     description: Server error
 */
 export async function validateOTP(req: Request, res: Response) {
-    const { otp, session_id } = req.body;
-    try {
-        const sessionData = await redis.get(session_id);
-        if (!sessionData) {
-            return res.status(404).json({ message: "Session not found" });
-        }
-        const session = JSON.parse(sessionData);
-        if (session.otp !== otp) {
-            return res.status(400).json({ message: "Otp is invalid" });
-        }
-        // insert the user in the database
-        // bcrypt password
-        const hashedPassword = await bcrypt.hash(session.password, 10);
-        const user = await insertUser({ name: session.name, email: session.email, password: hashedPassword });
-        if (!user) {
-            return res.status(500).json({ message: "Server Error" });
-        }
-        return res.status(201).json({ message: "Otp is valid" });
-    } catch (err) {
-        return res.status(500).json({ message: "Server Error" });
+  const { otp, session_id } = req.body;
+  try {
+    const sessionData = await redis.get(session_id);
+    if (!sessionData) {
+      return res.status(404).json({ message: "Session not found" });
     }
+    const session = JSON.parse(sessionData);
+    if (session.otp !== otp) {
+      return res.status(400).json({ message: "Otp is invalid" });
+    }
+    // insert the user in the database
+    // bcrypt password
+    const hashedPassword = await bcrypt.hash(session.password, 10);
+    const user = await insertUser({ name: session.name, email: session.email, password: hashedPassword });
+    if (!user) {
+      return res.status(500).json({ message: "Server Error" });
+    }
+    return res.status(201).json({ message: "Otp is valid" });
+  } catch (err) {
+    return res.status(500).json({ message: "Server Error" });
+  }
 }
 
 /**
@@ -186,37 +186,37 @@ responses:
     description: Server error
 */
 export async function login(req: Request, res: Response) {
-    const { email, password } = req.body;
-    try {
-        const user = await getUserByEmail(email);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        // check if password is correct
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
-        if (!isPasswordCorrect) {
-            return res.status(401).json({ message: "Invalid password" });
-        }
-
-        // generate token
-        const token = jwt.sign({ user_id: user.id }, config.jwt_secret, { expiresIn: "1h" });
-        res.cookie(config.auth_token, token,
-            {
-                httpOnly: true,
-                secure: true,
-                sameSite: "strict",
-                maxAge: 3600 * 1000
-            }
-        )
-        return res.status(200).json({
-            message: "Logged In", user: {
-                id: user.id,
-                name: user.name,
-            }
-        });
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({ message: "Server Error" });
+  const { email, password } = req.body;
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    // check if password is correct
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    // generate token
+    const token = jwt.sign({ user_id: user.id }, config.jwt_secret, { expiresIn: "1h" });
+    res.cookie(config.auth_token, token,
+      {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 3600 * 1000
+      }
+    )
+    return res.status(200).json({
+      message: "Logged In", user: {
+        id: user.id,
+        name: user.name,
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server Error" });
+  }
 }
