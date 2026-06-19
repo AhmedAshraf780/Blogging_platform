@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(
     cors({
         // change it later
-        origin: "http://localhost",
+        origin: "https://bloggingplatform-production-421c.up.railway.app",
         credentials: true,
     }),
 );
