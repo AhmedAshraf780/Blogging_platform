@@ -9,13 +9,13 @@ export const authMiddleware = (
 ) => {
   const token = req.cookies[config.auth_token];
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized", ok: false });
   }
   try {
     const decoded = jwt.verify(token, config.jwt_secret) as { user_id: number };
     req.user_id = decoded.user_id;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized", ok: false });
   }
 };

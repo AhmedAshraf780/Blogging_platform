@@ -1,19 +1,36 @@
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { userService } from "../services/user.service";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth()
+  const [loading, setLoading] = useState(true);
+  const [isAuth, setIsAuth] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await userService.me();
+
+        if (res.ok) {
+          setIsAuth(true);
+        } else {
+          setIsAuth(false);
+        }
+      } catch {
+        setIsAuth(false);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner" />
-        <span>Checking authentication...</span>
-      </div>
-    )
+    return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) return <Navigate to="/signin" replace />
+  if (!isAuth) {
+    return <Navigate to="/signin" replace />;
+  }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

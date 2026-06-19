@@ -50,7 +50,7 @@ app.use("/api/v1/blogs", authMiddleware, blogRouter);
 app.get("/api/v1/me", authMiddleware, async (req: Request, res: Response) => {
     try {
         const user = await getUserById(req.user_id!);
-        return res.status(200).json(user);
+        return res.status(200).json({ user, ok: true });
     } catch (err) {
         res.status(500).json({ message: "Server Error" })
     }

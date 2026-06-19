@@ -52,7 +52,7 @@ export const userService = {
         credentials: 'include',
       })
       const data = await res.json()
-      return { ok: res.ok, ...data }
+      return data
     } catch (e) {
       console.log(e)
       return { ok: false }
