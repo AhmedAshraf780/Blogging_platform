@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { blogService } from '../services/blog.service'
 import BlogCard from '../components/BlogCard'
+import { userService } from '../services/user.service'
+import { useNavigate } from 'react-router-dom'
 
 interface Blog {
   id: number
@@ -13,13 +15,15 @@ interface Blog {
   updated_at?: string
 }
 
-export default function Home({ isAuthenticated, userId }: { isAuthenticated: boolean; userId: string | null }) {
+export default function Home() {
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreator, setShowCreator] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const navigate = useNavigate();
 
   const fetchBlogs = () => {
     blogService.getAll().then(data => {
@@ -33,6 +37,15 @@ export default function Home({ isAuthenticated, userId }: { isAuthenticated: boo
   }
 
   useEffect(() => {
+    // check /me
+    (async () => {
+      const res = await userService.me()
+      if (!res.ok) {
+        navigate('/signin');
+        return
+      }
+      setUserId(res.user?.id?.toString() || null)
+    })()
     fetchBlogs()
   }, [])
 
@@ -71,7 +84,7 @@ export default function Home({ isAuthenticated, userId }: { isAuthenticated: boo
   return (
     <div className="page">
       <div className="home">
-        {isAuthenticated && (
+        {(
           <div className="creator-card">
             {!showCreator ? (
               <div className="creator-trigger" onClick={() => setShowCreator(true)}>

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { blogService } from '../services/blog.service'
+import { userService } from '../services/user.service'
 
 export default function CreateBlog() {
   const [title, setTitle] = useState('')
@@ -18,6 +19,15 @@ export default function CreateBlog() {
       toast.error(data.message || 'Failed to create blog')
     }
   }
+  useEffect(() => {
+    (async () => {
+      const res = await userService.me();
+      if (!res.ok) {
+        navigate('/signin');
+        return;
+      }
+    })()
+  }, [])
 
   return (
     <div className="form-page">

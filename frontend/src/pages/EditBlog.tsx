@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { blogService } from '../services/blog.service'
+import { userService } from '../services/user.service'
 
 export default function EditBlog() {
   const { id } = useParams<{ id: string }>()
@@ -10,6 +11,13 @@ export default function EditBlog() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    (async () => {
+      const res = await userService.me();
+      if (!res.ok) {
+        navigate('/signin');
+        return;
+      }
+    })()
     if (!id) return
     blogService.getById(id).then(data => {
       const blog = data.blog || data

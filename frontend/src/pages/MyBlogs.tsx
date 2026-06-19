@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { blogService } from '../services/blog.service'
 import BlogCard from '../components/BlogCard'
+import { userService } from '../services/user.service'
+import { useNavigate } from 'react-router-dom'
 
 interface Blog {
   id: number
@@ -16,6 +18,7 @@ interface Blog {
 export default function MyBlogs() {
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate();
 
   const fetchMyBlogs = () => {
     blogService.getAllBlogsOfUser().then(data => {
@@ -25,6 +28,13 @@ export default function MyBlogs() {
   }
 
   useEffect(() => {
+    (async () => {
+      const res = await userService.me();
+      if (!res.ok) {
+        navigate('/signin');
+        return;
+      }
+    })()
     fetchMyBlogs()
   }, [])
 

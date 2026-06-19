@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { userService } from './services/user.service'
 import Navbar from './components/Navbar'
-import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
@@ -14,18 +11,6 @@ import EditBlog from './pages/EditBlog'
 import './App.css'
 
 function App() {
-  const [auth, setAuth] = useState<{ ok: boolean; user?: { id?: number }; id?: number } | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    userService.me().then(data => {
-      setAuth(data)
-      setLoading(false)
-    })
-  }, [])
-
-  const isAuthenticated = auth?.ok ?? false
-  const userId = (auth?.user?.id || auth?.id) ?? null
 
   return (
     <>
@@ -54,22 +39,17 @@ function App() {
           },
         }}
       />
-      {loading ? (
-        <div className="loading">
-          <div className="spinner" />
-          <span>Loading...</span>
-        </div>
-      ) : (
-        <Routes>
-          <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Home isAuthenticated={isAuthenticated} userId={String(userId)} /></ProtectedRoute>} />
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/validate-otp" element={<ValidateOtp />} />
-          <Route path="/my-blogs" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MyBlogs /></ProtectedRoute>} />
-          <Route path="/create" element={<ProtectedRoute isAuthenticated={isAuthenticated}><CreateBlog /></ProtectedRoute>} />
-          <Route path="/edit/:id" element={<ProtectedRoute isAuthenticated={isAuthenticated}><EditBlog /></ProtectedRoute>} />
-        </Routes>
-      )}
+      (
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/validate-otp" element={<ValidateOtp />} />
+        <Route path="/my-blogs" element={<MyBlogs />} />
+        <Route path="/create" element={<CreateBlog />} />
+        <Route path="/edit/:id" element={<EditBlog />} />
+      </Routes>
+      )
     </>
   )
 }
