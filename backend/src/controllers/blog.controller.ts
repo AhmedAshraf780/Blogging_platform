@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getBlogs, getBlogById, createBlog, updateBlog, deleteBlog, getBlogsOfUser } from "../database/repositories/blog.repo";
 import { getUserById } from "../database/repositories/user.repo";
 import { redis } from "../config/redis";
+import { Blog } from "../models/blog.model";
 /**
 @swagger
 /blogs:
@@ -30,17 +31,17 @@ responses:
     description: Server error
 */
 export async function fetchAllBlogsOfUser(req: Request, res: Response) {
-    try {
-        const cachedBlogs = await redis.get(`blogs:${req.user_id}`);
-        if (cachedBlogs) {
-            return res.status(200).json({ blogs: JSON.parse(cachedBlogs) });
-        }
-        const blogs = await getBlogsOfUser(req.user_id!);
-        await redis.set(`blogs:${req.user_id}`, JSON.stringify(blogs), { "EX": 60 });
-        res.status(200).json(blogs);
-    } catch (err) {
-        res.status(500).json({ message: "Server Error" });
+  try {
+    const cachedBlogs = await redis.get(`blogs:${req.user_id}`);
+    if (cachedBlogs) {
+      return res.status(200).json({ blogs: JSON.parse(cachedBlogs) });
     }
+    const blogs = await getBlogsOfUser(req.user_id!);
+    await redis.set(`blogs:${req.user_id}`, JSON.stringify(blogs), { "EX": 60 });
+    res.status(200).json(blogs);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 
 
@@ -72,17 +73,17 @@ responses:
     description: Server error
 */
 export async function fetchAllBlogs(req: Request, res: Response) {
-    try {
-        const cachedBlogs = await redis.get("blogs");
-        if (cachedBlogs) {
-            return res.status(200).json({ blogs: JSON.parse(cachedBlogs) });
-        }
-        const blogs = await getBlogs();
-        await redis.set("blogs", JSON.stringify(blogs), { "EX": 60 * 2 });
-        res.status(200).json(blogs);
-    } catch (err) {
-        res.status(500).json({ message: "Server Error" });
+  try {
+    const cachedBlogs = await redis.get("blogs");
+    if (cachedBlogs) {
+      return res.status(200).json({ blogs: JSON.parse(cachedBlogs) });
     }
+    const blogs = await getBlogs();
+    await redis.set("blogs", JSON.stringify(blogs), { "EX": 10 });
+    res.status(200).json(blogs);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 /**
 @swagger
@@ -121,20 +122,20 @@ responses:
     description: Server error
 */
 export async function fetchBlogById(req: Request, res: Response) {
-    try {
-        const id = req.params.id;
-        if (!id) {
-            return res.status(400).json({ message: "Id is required" });
-        }
-
-        const blog = await getBlogById(parseInt(id as string));
-        if (!blog) {
-            return res.status(404).json({ message: "Blog not found" });
-        }
-        res.status(200).json(blog);
-    } catch (err) {
-        res.status(500).json({ message: "Server Error" });
+  try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ message: "Id is required" });
     }
+
+    const blog = await getBlogById(parseInt(id as string));
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+    res.status(200).json(blog);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 /**
 @swagger
@@ -171,22 +172,28 @@ responses:
     description: Server error
 */
 export async function insertBlog(req: Request, res: Response) {
-    const { title, content } = req.body;
-    try {
-        // check if author exists
-        const author = await getUserById(req.user_id!);
-        if (!author) {
-            return res.status(404).json({ message: "Author not found" });
-        }
-        const blog = await createBlog({ title, content, author_id: req.user_id! });
-        if (!blog) {
-            return res.status(500).json({ message: "Server Error" });
-        }
-        await redis.del(`blogs:${req.user_id}`);
-        res.status(201).json(blog);
-    } catch (err) {
-        res.status(500).json({ message: "Server Error" });
+  const { title, content } = req.body;
+  try {
+    // check if author exists
+    const author = await getUserById(req.user_id!);
+    if (!author) {
+      return res.status(404).json({ message: "Author not found" });
     }
+    const blog = await createBlog({ title, content, author_id: req.user_id! });
+    if (!blog) {
+      return res.status(500).json({ message: "Server Error" });
+    }
+    // add it to cache
+    const cachedData = await redis.get(`blogs:${req.user_id}`);
+    if (cachedData) {
+      const cachedBlogs = JSON.parse(cachedData);
+      cachedBlogs.push(blog);
+      await redis.set(`blogs:${req.user_id}`, JSON.stringify(cachedBlogs), { "EX": 60 });
+    }
+    res.status(201).json(blog);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 /**
 @swagger
@@ -232,27 +239,37 @@ responses:
     description: Server error
 */
 export async function UpdateBlog(req: Request, res: Response) {
-    const { id } = req.params;
-    let { title, content } = req.body;
-    try {
-        // check if blog exists
-        const existingBlog = await getBlogById(parseInt(id as string));
-        if (!existingBlog) {
-            return res.status(404).json({ message: "Blog not found" });
-        }
-        // check the owner 
-        if (existingBlog.author_id !== req.user_id) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-        const blog = await updateBlog({ id: parseInt(id as string), title, content, author_id: req.user_id });
-        if (!blog) {
-            return res.status(500).json({ message: "Server Error" });
-        }
-        await redis.del(`blogs:${req.user_id}`);
-        res.status(200).json(blog);
-    } catch (err) {
-        res.status(500).json({ message: "Server Error" });
+  const { id } = req.params;
+  let { title, content } = req.body;
+  try {
+    // check if blog exists
+    const existingBlog = await getBlogById(parseInt(id as string));
+    if (!existingBlog) {
+      return res.status(404).json({ message: "Blog not found" });
     }
+    // check the owner 
+    if (existingBlog.author_id !== req.user_id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const blog = await updateBlog({ id: parseInt(id as string), title, content, author_id: req.user_id });
+    if (!blog) {
+      return res.status(500).json({ message: "Server Error" });
+    }
+    const cachedData = await redis.get(`blogs:${req.user_id}`);
+    if (cachedData) {
+      const cachedBlogs = JSON.parse(cachedData);
+      cachedBlogs.map((blog: Blog) => {
+        if (blog.id === parseInt(id as string)) {
+          blog.title = title;
+          blog.content = content;
+        }
+      })
+      await redis.set(`blogs:${req.user_id}`, JSON.stringify(cachedBlogs), { "EX": 60 });
+    }
+    res.status(200).json(blog);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 /**
 @swagger
@@ -286,23 +303,28 @@ responses:
     description: Server error
 */
 export async function DeleteBlog(req: Request, res: Response) {
-    const { id } = req.params;
-    try {
-        const blog = await getBlogById(parseInt(id as string));
-        if (!blog) {
-            return res.status(404).json({ message: "Blog not found" });
-        }
-        if (blog.author_id !== req.user_id) {
-            console.log("user_id ", req.user_id, blog.author_id);
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-        const isDeleted = await deleteBlog(parseInt(id as string));
-        if (!isDeleted) {
-            return res.status(500).json({ message: "Server Error" });
-        }
-        await redis.del(`blogs:${req.user_id}`);
-        res.status(200).json({ message: "Blog deleted successfully" });
-    } catch (err) {
-        res.status(500).json({ message: "Server Error" });
+  const { id } = req.params;
+  try {
+    const blog = await getBlogById(parseInt(id as string));
+    if (!blog) {
+      return res.status(404).json({ message: "Blog not found" });
     }
+    if (blog.author_id !== req.user_id) {
+      console.log("user_id ", req.user_id, blog.author_id);
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const isDeleted = await deleteBlog(parseInt(id as string));
+    if (!isDeleted) {
+      return res.status(500).json({ message: "Server Error" });
+    }
+    const cachedData = await redis.get(`blogs:${req.user_id}`);
+    if (cachedData) {
+      const cachedBlogs = JSON.parse(cachedData);
+      cachedBlogs.splice(cachedBlogs.findIndex((blog: Blog) => blog.id === parseInt(id as string)), 1);
+      await redis.set(`blogs:${req.user_id}`, JSON.stringify(cachedBlogs), { "EX": 60 });
+    }
+    res.status(200).json({ message: "Blog deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 }

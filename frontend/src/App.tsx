@@ -14,7 +14,7 @@ import './App.css'
 
 function App() {
   return (
-    <AuthProvider>
+    <>
       <Navbar />
       <Toaster
         position="top-right"
@@ -49,7 +49,7 @@ function App() {
         <Route path="/create" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
         <Route path="/edit/:id" element={<ProtectedRoute><EditBlog /></ProtectedRoute>} />
       </Routes>
-    </AuthProvider>
+    </>
   )
 }
 
