@@ -12,6 +12,8 @@ export default async function start(app: Application) {
         // connect to redis
         await redis.connect();
         console.log("Redis connected successfully");
+        console.log("MAIL_USER ", process.env.MAIL_USER);
+        console.log("MAIL_PASSWORD ", process.env.MAIL_PASSWORD);
         app.listen(config.port, () => {
             console.log("Server is running on port " + config.port);
         });
