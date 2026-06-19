@@ -1,4 +1,4 @@
-const API = `http://zippy-mercy-production.up.railway.app`
+const API = `https://zippy-mercy-production.up.railway.app`
 
 export const userService = {
   async signup(name: string, email: string, password: string) {
