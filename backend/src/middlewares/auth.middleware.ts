@@ -8,6 +8,7 @@ export const authMiddleware = (
   next: NextFunction,
 ) => {
   const token = req.cookies[process.env.AUTH_TOKEN as string];
+  console.log(token)
   if (!token) {
     return res.status(401).json({ message: "Unauthorized, no token provided", ok: false });
   }
@@ -16,6 +17,7 @@ export const authMiddleware = (
     req.user_id = decoded.user_id;
     next();
   } catch (err) {
+    console.log(err)
     return res.status(401).json({ message: "Unauthorized", ok: false });
   }
 };
