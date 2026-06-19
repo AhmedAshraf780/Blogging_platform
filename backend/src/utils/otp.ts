@@ -21,8 +21,12 @@ export const sendOTPEmail = async (recipientEmail: string, otp: string): Promise
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("OTP email sent successfully!");
+    const ok = await Promise.race([
+      await transporter.sendMail(mailOptions),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Email timeout")), 10000)
+      ),
+    ]);
     return true;
   } catch (error) {
     console.error("Error sending OTP email:", error);
