@@ -7,9 +7,9 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction,
 ) => {
-  const token = req.cookies[config.auth_token];
+  const token = req.cookies[process.env.AUTH_TOKEN as string];
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized", ok: false });
+    return res.status(401).json({ message: "Unauthorized, no token provided", ok: false });
   }
   try {
     const decoded = jwt.verify(token, config.jwt_secret) as { user_id: number };

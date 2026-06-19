@@ -47,12 +47,15 @@ app.get('/healthz', (_: Request, res: Response) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/blogs", authMiddleware, blogRouter);
-app.get("/api/v1/me", authMiddleware, async (req: Request, res: Response) => {
+app.get("/api/v1/me", async (req: Request, res: Response) => {
     try {
+        if (!req.user_id) {
+            return res.status(401).json({ message: "Unauthorized, no token provided", ok: false });
+        }
         const user = await getUserById(req.user_id!);
         return res.status(200).json({ user, ok: true });
     } catch (err) {
-        res.status(500).json({ message: "Server Error" })
+        res.status(500).json({ message: "Server Error", ok: false });
     }
 })
 
