@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { useAuth } from '../context/AuthContext'
 import { blogService } from '../services/blog.service'
 import BlogCard from '../components/BlogCard'
 
@@ -15,7 +14,6 @@ interface Blog {
 }
 
 export default function MyBlogs() {
-  const { userId } = useAuth()
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -28,7 +26,7 @@ export default function MyBlogs() {
 
   useEffect(() => {
     fetchMyBlogs()
-  }, [userId])
+  }, [])
 
   const handleDelete = async (id: number) => {
     await blogService.delete(id)

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { useAuth } from '../context/AuthContext'
 import { blogService } from '../services/blog.service'
 import BlogCard from '../components/BlogCard'
 
@@ -14,8 +13,7 @@ interface Blog {
   updated_at?: string
 }
 
-export default function Home() {
-  const { isAuthenticated, userId } = useAuth()
+export default function Home({ isAuthenticated, userId }: { isAuthenticated: boolean; userId: string | null }) {
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreator, setShowCreator] = useState(false)
